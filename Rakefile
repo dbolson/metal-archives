@@ -15,7 +15,7 @@ Jeweler::Tasks.new do |gem|
   gem.name = "metal-archives"
   gem.homepage = "http://github.com/dbolson/metal-archives"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
+  gem.summary = %Q{metal-archives provides a way to search http://metal-archives.org/ for album release information.}
   gem.description = %Q{TODO: longer description of your gem}
   gem.email = "dbolson@gmail.com"
   gem.authors = ["Danny"]
