@@ -1,3 +1,4 @@
+# coding: utf-8
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "MetalArchives" do
@@ -46,7 +47,68 @@ describe "MetalArchives" do
           "release.php?id=290740", "release.php?id=295410", "release.php?id=293189", "release.php?id=296140", "release.php?id=291295"
         ]
         agent.album_links_from_url(agent.paginated_result_links.first).should == links
+      end
+    end
+  end
 
+  context "with an album page" do
+    context "with only a release year" do
+      it "should find the band information" do
+        search_results_html = File.open(File.dirname(__FILE__) + '/html/album_result.html')
+        @search_results = Nokogiri::HTML(search_results_html)
+        @mechanize = stub('Mechanize')
+        Mechanize.stub!(:new).and_return(@mechanize)
+        @mechanize.stub!(:get).and_return(@search_results)
+        agent = MetalArchives::Agent.new
+        album_link_from_url = "release.php?id=000001"
+
+        agent.album_from_url(album_link_from_url).should == {
+          :album => 'Fn-2+Fn-1=Fn',
+          :band => 'A Tree',
+          :label => 'NazgÃ»l Distro & Prod.',
+          :release_date => '2011',
+          :release_type => 'Demo'
+        }
+      end
+    end
+
+    context "with only a release month and year" do
+      it "should find the band information" do
+        search_results_html = File.open(File.dirname(__FILE__) + '/html/album_result3.html')
+        @search_results = Nokogiri::HTML(search_results_html)
+        @mechanize = stub('Mechanize')
+        Mechanize.stub!(:new).and_return(@mechanize)
+        @mechanize.stub!(:get).and_return(@search_results)
+        agent = MetalArchives::Agent.new
+        album_link_from_url = "release.php?id=000001"
+
+        agent.album_from_url(album_link_from_url).should == {
+          :album => 'Flesh Torn in Twilight',
+          :band => 'Acephalix',
+          :label => 'Deific Mourning',
+          :release_date => 'January 2011',
+          :release_type => 'Demo'
+        }
+      end
+    end
+
+    context "with a release month, day, and year" do
+      it "should find the band information" do
+        search_results_html = File.open(File.dirname(__FILE__) + '/html/album_result2.html')
+        @search_results = Nokogiri::HTML(search_results_html)
+        @mechanize = stub('Mechanize')
+        Mechanize.stub!(:new).and_return(@mechanize)
+        @mechanize.stub!(:get).and_return(@search_results)
+        agent = MetalArchives::Agent.new
+        album_link_from_url = "release.php?id=000001"
+
+        agent.album_from_url(album_link_from_url).should == {
+          :album => 'The Mirror of Deliverance',
+          :band => 'A Dream of Poe',
+          :label => 'ARX Productions',
+          :release_date => 'February 25th, 2011',
+          :release_type => 'Full-length'
+        }
       end
     end
   end
