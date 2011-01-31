@@ -81,6 +81,26 @@ module MetalArchives
       date = content[4].text
       if content.size == 7
         date << content[5].text
+
+        split_date = date.split(' ')
+        if split_date.size == 2 # only have month and year
+          date = DateTime.
+            new(
+              split_date[1].to_i,
+              Date::MONTHNAMES.find_index(split_date[0]),
+              -1
+            ).
+            strftime('%B %e %Y')
+
+            # need to use block to get s, the current captured backreference of the regexp because
+            # gsub doesn't see the $n-style references
+            date.gsub!(/\s(\d{1,2})\s/) do |s|
+              "#{MetalArchives.ordinalize(s.rstrip)}, "
+            end
+        end
+
+      else # only have year
+        date = "December 31st, #{date}"
       end
       date.strip
     end
@@ -88,6 +108,21 @@ module MetalArchives
     # Finds the release type in the assumed spot.
     def release_type_from_content(content)
       content[1].text
+    end
+  end
+
+  # Taken from Rails active_support/core_ext/string/inflections.rb but not referenced so the
+  # entire library is needed for this one method.
+  def self.ordinalize(number)
+    if (11..13).include?(number.to_i % 100)
+      "#{number}th"
+    else
+      case number.to_i % 10
+        when 1; "#{number}st"
+        when 2; "#{number}nd"
+        when 3; "#{number}rd"
+        else    "#{number}th"
+      end
     end
   end
 end
