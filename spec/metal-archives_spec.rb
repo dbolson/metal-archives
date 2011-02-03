@@ -20,8 +20,8 @@ describe "MetalArchives" do
 
       context "with a results page" do
         it "should find the paginated result links" do
-          @mechanize.stub!(:search_by_year).and_return(@search_results)
           agent = MetalArchives::Agent.new
+          agent.stub!(:search_by_year).and_return(@search_results)
 
           links = []
           (2..16).each do |i|
@@ -31,9 +31,9 @@ describe "MetalArchives" do
         end
 
         it "should find the album links" do
-          @mechanize.stub!(:search_by_year).and_return(@search_results)
           @mechanize.stub!(:get).and_return(@search_results)
           agent = MetalArchives::Agent.new
+          agent.stub!(:search_by_year).and_return(@search_results)
 
           links = [
             "release.php?id=296061", "release.php?id=295756", "release.php?id=294429", "release.php?id=295451", "release.php?id=295197",

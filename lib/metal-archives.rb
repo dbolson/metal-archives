@@ -4,28 +4,50 @@ module MetalArchives
   class Agent
     # An agent accesses the website and holds the HTML source.
     def initialize
-      @agent = Mechanize.new
+      begin
+        @agent = Mechanize.new
+      rescue Mechanize::ResponseCodeError => e
+        puts "\nError accessing metal-archives.com on initialization: #{e}"
+        return nil
+      end
     end
 
     # Goes straight to the search results page for the given year.
     def search_by_year(year=Time.now.year)
-      @agent.get("http://metal-archives.com/advanced.php?release_year=#{year}")
-      #search_results_html = File.open(File.dirname(__FILE__) + '/../spec/html/search_results.html')
-      #Nokogiri::HTML(search_results_html)
+      begin
+        @agent.get("http://metal-archives.com/advanced.php?release_year=#{year}")
+      rescue Mechanize::ResponseCodeError => e
+        puts "\nError accessing metal-archives.com's search results page: #{e}"
+        return nil
+      end
     end
 
     # Finds all the links to the search results pages as they are paginated.
     def paginated_result_links(year=nil)
-      @agent.search_by_year(year).search('body table:nth-child(2n) tr:first-child a').collect do |link|
-        link['href']
+      links = []
+      begin
+        search_by_year(year).search('body table:nth-child(2n) tr:first-child a').each do |link|
+          links << link['href']
+        end
+      rescue Mechanize::ResponseCodeError => e
+        puts "\nError accessing metal-archives.com's paginated result links: #{e}"
+      ensure
+        return links
       end
     end
 
     # Finds all the links to the albums on a given search results page.
     def album_links_from_url(url)
-      @agent.get(url).search('body table:nth-child(2n) tr td:nth-child(3n) a').collect do |link|
-        link['href']
+      links = []
+      begin
+        @agent.get(url).search('body table:nth-child(2n) tr td:nth-child(3n) a').each do |link|
+          links << link['href']
+        end
+      rescue Mechanize::ResponseCodeError => e
+        puts "\nError accessing metal-archives.com's album links from url: #{e}"
+        return nil
       end
+      return links
     end
 
     # Finds the following fields on an album's page:
@@ -126,7 +148,3 @@ module MetalArchives
     end
   end
 end
-
-#rescue Mechanize::ResponseCodeError => e
-#  ::Rails.logger.error "\nError accessing metal-archives.com on initialization."
-#end
