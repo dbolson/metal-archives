@@ -1,6 +1,29 @@
 = metal-archives
 
-Description goes here.
+metal-archives provides an interface to search for album releases for a specific year, defaulting to the current one if none is provided.
+
+$LOAD_PATH.unshift(File.dirname(__FILE__))
+$LOAD_PATH.unshift "./metal-archives/lib"
+require 'mechanize'
+require 'metal-archives'
+
+agent = MetalArchives::Agent.new
+search_results = agent.paginated_result_links
+links = []
+
+search_results.each do |search_result|
+  link = agent.album_links_from_url(search_result)
+  puts "link: #{link}"
+  if link.nil?
+    puts "\nThrew an exception so exit"
+    break
+  else
+    links << link
+  end
+end
+links.flatten!
+
+puts "DONE: #{links.size}"
 
 == Contributing to metal-archives
  
@@ -14,6 +37,5 @@ Description goes here.
 
 == Copyright
 
-Copyright (c) 2011 Danny. See LICENSE.txt for
+Copyright (c) 2011 Danny Olson. See LICENSE.txt for
 further details.
-

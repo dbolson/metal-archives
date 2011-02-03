@@ -1,12 +1,14 @@
 require 'mechanize'
 
 module MetalArchives
+  SITE_URL = 'http://metal-archives.com'
+
   class Agent
     # An agent accesses the website and holds the HTML source.
     def initialize
       begin
         @agent = Mechanize.new
-      rescue Mechanize::ResponseCodeError => e
+      rescue Exception => e
         puts "\nError accessing metal-archives.com on initialization: #{e}"
         return nil
       end
@@ -15,21 +17,21 @@ module MetalArchives
     # Goes straight to the search results page for the given year.
     def search_by_year(year=Time.now.year)
       begin
-        @agent.get("http://metal-archives.com/advanced.php?release_year=#{year}")
-      rescue Mechanize::ResponseCodeError => e
+        @agent.get("#{SITE_URL}/advanced.php?release_year=#{year}")
+      rescue Exception => e
         puts "\nError accessing metal-archives.com's search results page: #{e}"
         return nil
       end
     end
 
     # Finds all the links to the search results pages as they are paginated.
-    def paginated_result_links(year=nil)
-      links = []
+    def paginated_result_links(year=Time.now.year)
+      links = ["/advanced.php?release_year=#{year}"] # need the first page because it's not a link
       begin
         search_by_year(year).search('body table:nth-child(2n) tr:first-child a').each do |link|
           links << link['href']
         end
-      rescue Mechanize::ResponseCodeError => e
+      rescue Exception => e
         puts "\nError accessing metal-archives.com's paginated result links: #{e}"
       ensure
         return links
@@ -40,10 +42,12 @@ module MetalArchives
     def album_links_from_url(url)
       links = []
       begin
-        @agent.get(url).search('body table:nth-child(2n) tr td:nth-child(3n) a').each do |link|
+        page = @agent.get(SITE_URL + url)
+        page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
+        page.search('body table:nth-child(2n) tr td:nth-child(3n) a').each do |link|
           links << link['href']
         end
-      rescue Mechanize::ResponseCodeError => e
+      rescue Exception => e
         puts "\nError accessing metal-archives.com's album links from url: #{e}"
         return nil
       end
@@ -57,22 +61,27 @@ module MetalArchives
     # album's release date
     # album's release type (full-length, demo, split, DVD, etc.)
     def album_from_url(url)
-      page = @agent.get(url)
-      #page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1'      
+      page = @agent.get(SITE_URL + '/' + url)
+      page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
       band_and_album = page.search('body table tr:first-child .tt').text
 
       # these fields can be in one of the following forms, so we need to find the specific fields appropriately:
       # "\n\t\t", "Demo", ", NazgÃ»l Distro & Prod.", "", "2011", "\t\t\t"
       # "\n\t\t", "Demo", ", Deific Mourning", "", "\n\n\t\tJanuary ", "2011", "\t\t\t"
       # "Full-length", ", ARX Productions", "", "\n\n\t\tFebruary 25th, ", "2011", "\t\t\t"
-      album_fields = page.search('body table:nth-child(2n) tr:first-child > td:first-child').first.children
+      begin
+        album_fields = page.search('body table:nth-child(2n) tr:first-child > td:first-child').first.children
+      rescue Exception => e
+        puts "\nError accessing metal-archives.com's album information: #{e}"
+      end
 
       {
         :album => album_from_content(band_and_album),
         :band => band_from_content(band_and_album),
         :label => label_from_content(album_fields),
         :release_date => release_date_from_content(album_fields),
-        :release_type => release_type_from_content(album_fields)
+        :release_type => release_type_from_content(album_fields),
+        :url => url
       }
     end
 

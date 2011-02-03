@@ -23,7 +23,7 @@ describe "MetalArchives" do
           agent = MetalArchives::Agent.new
           agent.stub!(:search_by_year).and_return(@search_results)
 
-          links = []
+          links = ['/advanced.php?release_year=2011']
           (2..16).each do |i|
             links << "/advanced.php?band_name=&band_status=&genre=&themes=&origin=0&location=&bandLabel=&release_name=&release_type=&label=&release_year=2011&p=#{i}"
           end
@@ -68,7 +68,8 @@ describe "MetalArchives" do
             :band => 'A Tree',
             :label => 'NazgÃ»l Distro & Prod.',
             :release_date => 'December 31st, 2011',
-            :release_type => 'Demo'
+            :release_type => 'Demo',
+            :url => 'release.php?id=000001'
           }
         end
       end
@@ -88,7 +89,8 @@ describe "MetalArchives" do
             :band => 'Acephalix',
             :label => 'Deific Mourning',
             :release_date => 'April 30th, 2011',
-            :release_type => 'Demo'
+            :release_type => 'Demo',
+            :url => 'release.php?id=000001'
           }
         end
       end
@@ -108,7 +110,8 @@ describe "MetalArchives" do
             :band => 'A Dream of Poe',
             :label => 'ARX Productions',
             :release_date => 'February 25th, 2011',
-            :release_type => 'Full-length'
+            :release_type => 'Full-length',
+            :url => 'release.php?id=000001'
           }
         end
       end
