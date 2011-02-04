@@ -4,31 +4,31 @@ metal-archives provides an interface to search for album releases for a specific
 
 Here is a quick and dirty example:
 
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-$LOAD_PATH.unshift "./metal-archives/lib"
-require 'mechanize'
-require 'metal-archives'
+  $LOAD_PATH.unshift(File.dirname(__FILE__))
+  $LOAD_PATH.unshift "./metal-archives/lib"
+  require 'mechanize'
+  require 'metal-archives'
 
-agent = MetalArchives::Agent.new
-links = []
+  agent = MetalArchives::Agent.new
+  links = []
 
-agent.paginated_result_links.each do |search_result|
-  link = agent.album_links_from_url(search_result)
-  if link.nil?
-    puts "\nThrew an exception so exit"
-    break
-  else
-    print '.'
-    links << link
+  agent.paginated_result_links.each do |search_result|
+    link = agent.album_links_from_url(search_result)
+    if link.nil?
+      puts "\nThrew an exception so exit"
+      break
+    else
+      print '.'
+      links << link
+    end
   end
-end
-links.flatten!
-puts "DONE: #{links.size}"
+  links.flatten!
+  puts "DONE: #{links.size}"
 
-if links.size >= 1
-  puts "album information for the first result: #{agent.album_from_url(links.first).inspect}"
-  puts "album information for the first result: #{agent.album_from_url(links.last).inspect}"
-end
+  if links.size >= 1
+    puts "album information for the first result: #{agent.album_from_url(links.first).inspect}"
+    puts "album information for the first result: #{agent.album_from_url(links.last).inspect}"
+  end
 
 == Contributing to metal-archives
  
