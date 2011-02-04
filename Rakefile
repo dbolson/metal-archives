@@ -16,13 +16,14 @@ Jeweler::Tasks.new do |gem|
   gem.homepage = "http://github.com/dbolson/metal-archives"
   gem.license = "MIT"
   gem.summary = %Q{metal-archives provides a way to search http://metal-archives.org/ for album release information.}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.description = %Q{metal-archives provides an interface to search for album releases for a specific year, defaulting to the current one if none is provided.}
   gem.email = "dbolson@gmail.com"
-  gem.authors = ["Danny"]
+  gem.authors = ["Danny Olson"]
   # Include your dependencies below. Runtime dependencies are required when using your gem,
   # and development dependencies are only needed for development (ie running rake tasks, tests, etc)
   #  gem.add_runtime_dependency 'jabber4r', '> 0.1'
   #  gem.add_development_dependency 'rspec', '> 1.2.3'
+  gem.add_runtime_dependency 'mechanize', '~> 1.0.0'
 end
 Jeweler::RubygemsDotOrgTasks.new
 
