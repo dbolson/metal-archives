@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
     "Rakefile",
     "VERSION",
     "lib/metal-archives.rb",
+    "metal-archives.gemspec",
     "spec/html/album_result.html",
     "spec/html/album_result2.html",
     "spec/html/album_result3.html",
