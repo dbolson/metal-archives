@@ -23,8 +23,9 @@ describe "MetalArchives" do
           agent = MetalArchives::Agent.new
           agent.stub!(:search_by_year).and_return(@search_results)
 
-          links = ['/advanced.php?release_year=2011']
-          (2..16).each do |i|
+          #links = ['/advanced.php?release_year=2011']
+          links = []
+          (1..16).each do |i|
             links << "/advanced.php?band_name=&band_status=&genre=&themes=&origin=0&location=&bandLabel=&release_name=&release_type=&label=&release_year=2011&p=#{i}"
           end
           agent.paginated_result_links.should == links

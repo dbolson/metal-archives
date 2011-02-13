@@ -26,7 +26,8 @@ module MetalArchives
 
     # Finds all the links to the search results pages as they are paginated.
     def paginated_result_links(year=Time.now.year)
-      links = ["/advanced.php?release_year=#{year}"] # need the first page because it's not a link
+      # need the first page because it's not a link
+      links = ["/advanced.php?band_name=&band_status=&genre=&themes=&origin=0&location=&bandLabel=&release_name=&release_type=&label=&release_year=#{year}&p=1"]
       begin
         search_by_year(year).search('body table:nth-child(2n) tr:first-child a').each do |link|
           links << link['href']
