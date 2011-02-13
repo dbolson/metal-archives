@@ -5,19 +5,20 @@ module MetalArchives
 
   class Agent
     # An agent accesses the website and holds the HTML source.
-    def initialize
+    def initialize(year=Time.now.year)
       begin
         @agent = Mechanize.new
       rescue Exception => e
         puts "\nError accessing metal-archives.com on initialization: #{e}"
         return nil
       end
+      @year = year
     end
 
     # Goes straight to the search results page for the given year.
-    def search_by_year(year=Time.now.year)
+    def search_by_year
       begin
-        @agent.get("#{SITE_URL}/advanced.php?release_year=#{year}&p=1")
+        @agent.get("#{SITE_URL}/advanced.php?release_year=#{@year}&p=1")
       rescue Exception => e
         puts "\nError accessing metal-archives.com's search results page: #{e}"
         return nil
@@ -25,11 +26,11 @@ module MetalArchives
     end
 
     # Finds all the links to the search results pages as they are paginated.
-    def paginated_result_links(year=Time.now.year)
+    def paginated_result_links
       # need the first page because it's not a link
-      links = ["/advanced.php?release_year=#{year}&p=1"]
+      links = ["/advanced.php?release_year=#{@year}&p=1"]
       begin
-        search_by_year(year).search('body table:nth-child(2n) tr:first-child a').each do |link|
+        search_by_year.search('body table:nth-child(2n) tr:first-child a').each do |link|
           links << link['href']
         end
       rescue Exception => e
@@ -86,8 +87,8 @@ module MetalArchives
       }
     end
 
-    def total_albums(year=Time.now.year)
-      page = search_by_year(year)
+    def total_albums
+      page = search_by_year
       album_total = page.search('body table:nth-child(2n) tr:first-child b').first.content.match(/\sof\s(\d+)/)
       if album_total.nil?
         0

@@ -13,21 +13,21 @@ describe "MetalArchives" do
 
       it "should find the total number of albums" do
         @mechanize.stub!(:get).and_return(@search_results)
-        agent = MetalArchives::Agent.new
+        agent = MetalArchives::Agent.new(2011)
 
         agent.total_albums.should == 757
       end
 
       it "should get the results page" do
         @mechanize.stub!(:get).and_return(@search_results)
-        agent = MetalArchives::Agent.new
+        agent = MetalArchives::Agent.new(2011)
 
         agent.search_by_year.should == @search_results
       end
 
       context "with a results page" do
         it "should find the paginated result links" do
-          agent = MetalArchives::Agent.new
+          agent = MetalArchives::Agent.new(2011)
           agent.stub!(:search_by_year).and_return(@search_results)
 
           links = (1..16).collect do |i|
@@ -38,7 +38,7 @@ describe "MetalArchives" do
 
         it "should find the album links" do
           @mechanize.stub!(:get).and_return(@search_results)
-          agent = MetalArchives::Agent.new
+          agent = MetalArchives::Agent.new(2011)
           agent.stub!(:search_by_year).and_return(@search_results)
 
           links = [
@@ -66,7 +66,7 @@ describe "MetalArchives" do
           @mechanize = stub('Mechanize')
           Mechanize.stub!(:new).and_return(@mechanize)
           @mechanize.stub!(:get).and_return(@search_results)
-          agent = MetalArchives::Agent.new
+          agent = MetalArchives::Agent.new(2011)
           album_link_from_url = "release.php?id=000001"
 
           agent.album_from_url(album_link_from_url).should == {
@@ -87,7 +87,7 @@ describe "MetalArchives" do
           @mechanize = stub('Mechanize')
           Mechanize.stub!(:new).and_return(@mechanize)
           @mechanize.stub!(:get).and_return(@search_results)
-          agent = MetalArchives::Agent.new
+          agent = MetalArchives::Agent.new(2011)
           album_link_from_url = "release.php?id=000001"
 
           agent.album_from_url(album_link_from_url).should == {
@@ -108,7 +108,7 @@ describe "MetalArchives" do
           @mechanize = stub('Mechanize')
           Mechanize.stub!(:new).and_return(@mechanize)
           @mechanize.stub!(:get).and_return(@search_results)
-          agent = MetalArchives::Agent.new
+          agent = MetalArchives::Agent.new(2011)
           album_link_from_url = "release.php?id=000001"
 
           agent.album_from_url(album_link_from_url).should == {
