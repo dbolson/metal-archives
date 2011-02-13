@@ -86,6 +86,16 @@ module MetalArchives
       }
     end
 
+    def total_albums(year=Time.now.year)
+      page = search_by_year(year)
+      album_total = page.search('body table:nth-child(2n) tr:first-child b').first.content.match(/\sof\s(\d+)/)
+      if album_total.nil?
+        0
+      else
+        album_total[1].to_i
+      end
+    end
+
     private
 
     # The band and and album fields are together, so we need to split them apart.

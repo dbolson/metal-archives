@@ -2,8 +2,8 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "MetalArchives" do
-  context "has an Agent" do
-    context "searching by year" do
+  context "with an agent" do
+    context "that searches by year" do
       before do
         search_results_html = File.open(File.dirname(__FILE__) + '/html/search_results.html')
         @search_results = Nokogiri::HTML(search_results_html)
@@ -11,7 +11,14 @@ describe "MetalArchives" do
         Mechanize.stub!(:new).and_return(@mechanize)
       end
 
-      it "should GET the results page" do
+      it "should find the total number of albums" do
+        @mechanize.stub!(:get).and_return(@search_results)
+        agent = MetalArchives::Agent.new
+
+        agent.total_albums.should == 757
+      end
+
+      it "should get the results page" do
         @mechanize.stub!(:get).and_return(@search_results)
         agent = MetalArchives::Agent.new
 
@@ -23,10 +30,8 @@ describe "MetalArchives" do
           agent = MetalArchives::Agent.new
           agent.stub!(:search_by_year).and_return(@search_results)
 
-          #links = ['/advanced.php?release_year=2011']
-          links = []
-          (1..16).each do |i|
-            links << "/advanced.php?release_year=2011&p=#{i}"
+          links = (1..16).collect do |i|
+            "/advanced.php?release_year=2011&p=#{i}"
           end
           agent.paginated_result_links.should == links
         end
