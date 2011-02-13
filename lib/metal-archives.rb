@@ -25,35 +25,35 @@ module MetalArchives
       end
     end
 
-    # Finds all the links to the search results pages as they are paginated.
-    def paginated_result_links
-      # need the first page because it's not a link
-      links = ["/advanced.php?release_year=#{@year}&p=1"]
+    # Finds all the url to the search results pages as they are paginated.
+    def paginated_result_urls
+      # need the first page because it's not a url
+      urls = ["/advanced.php?release_year=#{@year}&p=1"]
       begin
         search_by_year.search('body table:nth-child(2n) tr:first-child a').each do |link|
-          links << link['href']
+          urls << link['href']
         end
       rescue Exception => e
-        puts "\nError accessing metal-archives.com's paginated result links: #{e}"
+        puts "\nError accessing metal-archives.com's paginated result urls: #{e}"
       ensure
-        return links
+        return urls
       end
     end
 
-    # Finds all the links to the albums on a given search results page.
-    def album_links_from_url(url)
-      links = []
+    # Finds all the urls to the albums on a given search results page.
+    def album_urls(url)
+      urls = []
       begin
         page = @agent.get(SITE_URL + url)
         page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
         page.search('body table:nth-child(2n) tr td:nth-child(3n) a').each do |link|
-          links << link['href']
+          urls << link['href']
         end
       rescue Exception => e
-        puts "\nError accessing metal-archives.com's album links from url: #{e}"
+        puts "\nError accessing metal-archives.com's album urls: #{e}"
         return nil
       end
-      return links
+      return urls
     end
 
     # Finds the following fields on an album's page:

@@ -26,22 +26,22 @@ describe "MetalArchives" do
       end
 
       context "with a results page" do
-        it "should find the paginated result links" do
+        it "should find the paginated result urls" do
           agent = MetalArchives::Agent.new(2011)
           agent.stub!(:search_by_year).and_return(@search_results)
 
-          links = (1..16).collect do |i|
+          urls = (1..16).collect do |i|
             "/advanced.php?release_year=2011&p=#{i}"
           end
-          agent.paginated_result_links.should == links
+          agent.paginated_result_urls.should == urls
         end
 
-        it "should find the album links" do
+        it "should find the album urls" do
           @mechanize.stub!(:get).and_return(@search_results)
           agent = MetalArchives::Agent.new(2011)
           agent.stub!(:search_by_year).and_return(@search_results)
 
-          links = [
+          urls = [
             "release.php?id=296061", "release.php?id=295756", "release.php?id=294429", "release.php?id=295451", "release.php?id=295197",
             "release.php?id=289824", "release.php?id=295519", "release.php?id=295457", "release.php?id=288298", "release.php?id=296048",
             "release.php?id=290116", "release.php?id=295059", "release.php?id=291931", "release.php?id=296081", "release.php?id=295301",
@@ -53,7 +53,7 @@ describe "MetalArchives" do
             "release.php?id=295806", "release.php?id=294017", "release.php?id=296098", "release.php?id=294092", "release.php?id=295551",
             "release.php?id=290740", "release.php?id=295410", "release.php?id=293189", "release.php?id=296140", "release.php?id=291295"
           ]
-          agent.album_links_from_url(agent.paginated_result_links.first).should == links
+          agent.album_urls(agent.paginated_result_urls.first).should == urls
         end
       end
     end
@@ -67,9 +67,9 @@ describe "MetalArchives" do
           Mechanize.stub!(:new).and_return(@mechanize)
           @mechanize.stub!(:get).and_return(@search_results)
           agent = MetalArchives::Agent.new(2011)
-          album_link_from_url = "release.php?id=000001"
+          album_url = "release.php?id=000001"
 
-          agent.album_from_url(album_link_from_url).should == {
+          agent.album_from_url(album_url).should == {
             :album => 'Fn-2+Fn-1=Fn',
             :band => 'A Tree',
             :label => 'NazgÃ»l Distro & Prod.',
@@ -88,9 +88,9 @@ describe "MetalArchives" do
           Mechanize.stub!(:new).and_return(@mechanize)
           @mechanize.stub!(:get).and_return(@search_results)
           agent = MetalArchives::Agent.new(2011)
-          album_link_from_url = "release.php?id=000001"
+          album_url = "release.php?id=000001"
 
-          agent.album_from_url(album_link_from_url).should == {
+          agent.album_from_url(album_url).should == {
             :album => 'Flesh Torn in Twilight',
             :band => 'Acephalix',
             :label => 'Deific Mourning',
@@ -109,9 +109,9 @@ describe "MetalArchives" do
           Mechanize.stub!(:new).and_return(@mechanize)
           @mechanize.stub!(:get).and_return(@search_results)
           agent = MetalArchives::Agent.new(2011)
-          album_link_from_url = "release.php?id=000001"
+          album_url = "release.php?id=000001"
 
-          agent.album_from_url(album_link_from_url).should == {
+          agent.album_from_url(album_url).should == {
             :album => 'The Mirror of Deliverance',
             :band => 'A Dream of Poe',
             :label => 'ARX Productions',

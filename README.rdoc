@@ -10,24 +10,24 @@ Here is a quick and dirty example:
   require 'metal-archives'
 
   agent = MetalArchives::Agent.new
-  links = []
+  urls = []
 
-  agent.paginated_result_links.each do |search_result|
-    link = agent.album_links_from_url(search_result)
-    if link.nil?
+  agent.paginated_result_urls.each do |search_result|
+    url = agent.album_urls(search_result)
+    if url.nil?
       puts "\nThrew an exception so exit"
       break
     else
       print '.'
-      links << link
+      urls << url
     end
   end
-  links.flatten!
-  puts "DONE: #{links.size}"
+  urls.flatten!
+  puts "DONE: #{urls.size}"
 
-  if links.size >= 1
-    puts "album information for the first result: #{agent.album_from_url(links.first).inspect}"
-    puts "album information for the first result: #{agent.album_from_url(links.last).inspect}"
+  if urls.size >= 1
+    puts "album information for the first result: #{agent.album_from_url(urls.first).inspect}"
+    puts "album information for the first result: #{agent.album_from_url(urls.last).inspect}"
   end
 
 == Contributing to metal-archives
