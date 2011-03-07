@@ -45,9 +45,11 @@ module MetalArchives
       urls = []
       begin
         page = @agent.get(SITE_URL + url)
-        page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
-        page.search('body table:nth-child(2n) tr td:nth-child(3n) a').each do |link|
-          urls << link['href']
+        if page
+          page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
+          page.search('body table:nth-child(2n) tr td:nth-child(3n) a').each do |link|
+            urls << link['href']
+          end
         end
       rescue Exception => e
         puts "\nError accessing metal-archives.com's album urls: #{e}"
@@ -65,14 +67,16 @@ module MetalArchives
     def album_from_url(url)
       begin
         page = @agent.get(SITE_URL + '/' + url)
-        page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
-        band_and_album = page.search('body table tr:first-child .tt').text
+        if page
+          page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
+          band_and_album = page.search('body table tr:first-child .tt').text
 
         # these fields can be in one of the following forms, so we need to find the specific fields appropriately:
         # "\n\t\t", "Demo", ", NazgÃ»l Distro & Prod.", "", "2011", "\t\t\t"
         # "\n\t\t", "Demo", ", Deific Mourning", "", "\n\n\t\tJanuary ", "2011", "\t\t\t"
         # "Full-length", ", ARX Productions", "", "\n\n\t\tFebruary 25th, ", "2011", "\t\t\t"
-        album_fields = page.search('body table:nth-child(2n) tr:first-child > td:first-child').first.children
+          album_fields = page.search('body table:nth-child(2n) tr:first-child > td:first-child').first.children
+        end
       rescue Exception => e
         puts "\nError accessing metal-archives.com's album information: #{e}"
         return nil
