@@ -2,8 +2,8 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "MetalArchives" do
-  context "with an agent" do
-    context "that searches by year" do
+  describe "with an agent" do
+    describe "that searches by year" do
       before do
         search_results_html = File.open(File.dirname(__FILE__) + '/html/search_results.html')
         @search_results = Nokogiri::HTML(search_results_html)
@@ -58,7 +58,19 @@ describe "MetalArchives" do
       end
     end
 
-    context "with an album page" do
+    describe "with an album page" do
+      context "when a page has no content" do
+        it "should find the band information" do
+          @mechanize = stub('Mechanize')
+          Mechanize.stub!(:new).and_return(@mechanize)
+          @mechanize.stub!(:get).and_return('page not found')
+          agent = MetalArchives::Agent.new(2011)
+          album_url = "release.php?id=000001"
+
+          agent.album_from_url(album_url).should == {}
+        end
+      end
+
       context "with only a release year" do
         it "should find the band information" do
           search_results_html = File.open(File.dirname(__FILE__) + '/html/album_result.html')

@@ -70,18 +70,23 @@ module MetalArchives
         if page
           page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
           band_and_album = page.search('body table tr:first-child .tt').text
-
-        # these fields can be in one of the following forms, so we need to find the specific fields appropriately:
-        # "\n\t\t", "Demo", ", NazgÃ»l Distro & Prod.", "", "2011", "\t\t\t"
-        # "\n\t\t", "Demo", ", Deific Mourning", "", "\n\n\t\tJanuary ", "2011", "\t\t\t"
-        # "Full-length", ", ARX Productions", "", "\n\n\t\tFebruary 25th, ", "2011", "\t\t\t"
           album_fields = page.search('body table:nth-child(2n) tr:first-child > td:first-child').first.children
         end
+      rescue NoMethodError => e
+        # this is an unusual error that occurs when a page only has the content "page not found"
+        # this should return an empty hash so the calling method doens't stop searching on this page
+        # or else it will never get past it
+        puts "\nError accessing metal-archives.com's album information: page not found"
+        return {}
       rescue Exception => e
         puts "\nError accessing metal-archives.com's album information: #{e}"
         return nil
       end
 
+      # these fields can be in one of the following forms, so we need to find the specific fields appropriately:
+      # "\n\t\t", "Demo", ", NazgÃ»l Distro & Prod.", "", "2011", "\t\t\t"
+      # "\n\t\t", "Demo", ", Deific Mourning", "", "\n\n\t\tJanuary ", "2011", "\t\t\t"
+      # "Full-length", ", ARX Productions", "", "\n\n\t\tFebruary 25th, ", "2011", "\t\t\t"
       {
         :album => album_from_content(band_and_album),
         :band => band_from_content(band_and_album),
