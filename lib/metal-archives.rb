@@ -1,186 +1,79 @@
-require 'mechanize'
+require 'json'
+require 'net/http'
 
 module MetalArchives
-  SITE_URL = 'http://metal-archives.com'
-
   class Agent
+    SITE_URL = 'http://metal-archives.com'
+    NO_BAND_REGEXP = /span.+<\/span>/
+    BAND_NAME_AND_COUNTRY_REGEXP = /(.+)\s{1}\(([a-zA-Z]{2})\)/
+    ALBUM_URL_AND_NAME_REGEXP = /"(.+)">(.+)<\/a>/
+    RELEASE_DATE_REGEXP = /<!--\s(.{10})\s-->/
+
     # An agent accesses the website and holds the HTML source.
     def initialize(year=Time.now.year)
-      begin
-        @agent = Mechanize.new
-      rescue Exception => e
-        puts "\nError accessing metal-archives.com on initialization: #{e}"
-        return nil
-      end
       @year = year
+      @total_results = 0
     end
 
-    # Goes straight to the search results page for the given year.
-    def search_by_year
-      begin
-        @agent.get("#{SITE_URL}/advanced.php?release_year=#{@year}&p=1")
-      rescue Exception => e
-        puts "\nError accessing metal-archives.com's search results page: #{e}"
-        return nil
-      end
+    # Find the total results to search through and memoize it.
+    def total_albums
+      return @total_results if @total_results > 0
+      results = json_results("http://www.metal-archives.com/search/ajax-advanced/searching/albums/?&releaseYearFrom=#{@year}&releaseMonthFrom=1&releaseYearTo=#{@year}&releaseMonthTo=12&_=1&sEcho=0&iColumns=4&sColumns=&iDisplayStart=1&iDisplayLength=100&sNames=%2C%2C%2C")
+      @total_results = results['iTotalRecords']
+      @total_results
     end
 
     # Finds all the url to the search results pages as they are paginated.
-    def paginated_result_urls
-      # need the first page because it's not a url
-      urls = ["/advanced.php?release_year=#{@year}&p=1"]
-      begin
-        search_by_year.search('body table:nth-child(2n) tr:first-child a').each do |link|
-          urls << link['href']
-        end
-      rescue Exception => e
-        puts "\nError accessing metal-archives.com's paginated result urls: #{e}"
-      ensure
-        return urls
+    def paginated_albums
+      albums = []
+      (total_albums / 100 + 1).times do |i|
+        display_start = i * 100
+        results = json_results("http://www.metal-archives.com/search/ajax-advanced/searching/albums/?&releaseYearFrom=#{@year}&releaseMonthFrom=1&releaseYearTo=#{@year}&releaseMonthTo=12&_=1&sEcho=0&iColumns=4&sColumns=&iDisplayStart=#{display_start}&iDisplayLength=100&sNames=%2C%2C%2C")
+        albums << results['aaData']
       end
+      albums
     end
 
-    # Finds all the urls to the albums on a given search results page.
-    def album_urls(url)
-      urls = []
-      begin
-        page = @agent.get(SITE_URL + url)
-        if page
-          page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
-          page.search('body table:nth-child(2n) tr td:nth-child(3n) a').each do |link|
-            urls << link['href']
-          end
-        end
-      rescue Exception => e
-        puts "\nError accessing metal-archives.com's album urls: #{e}"
-        return nil
-      end
-      return urls
+    def band_url(album)
+      band_array(album)[1]
     end
 
-    # Finds the following fields on an album's page:
-    # album name
-    # band name
-    # album's record label
-    # album's release date
-    # album's release type (full-length, demo, split, DVD, etc.)
-    def album_from_url(url)
-      begin
-        page = @agent.get(SITE_URL + '/' + url)
-        if page
-          page.encoding = 'iso-8859-1' if !page.nil? && page.encoding != 'iso-8859-1' # needed for foreign characters
-          band_and_album = page.search('body table tr:first-child .tt').text
-          album_fields = page.search('body table:nth-child(2n) tr:first-child > td:first-child').first.children
-        end
-      rescue NoMethodError => e
-        # this is an unusual error that occurs when a page only has the content "page not found"
-        # this should return an empty hash so the calling method doens't stop searching on this page
-        # or else it will never get past it
-        puts "\nError accessing metal-archives.com's album information: page not found"
-        return {}
-      rescue Exception => e
-        puts "\nError accessing metal-archives.com's album information: #{e}"
-        return nil
-      end
-
-      # these fields can be in one of the following forms, so we need to find the specific fields appropriately:
-      # "\n\t\t", "Demo", ", NazgÃ»l Distro & Prod.", "", "2011", "\t\t\t"
-      # "\n\t\t", "Demo", ", Deific Mourning", "", "\n\n\t\tJanuary ", "2011", "\t\t\t"
-      # "Full-length", ", ARX Productions", "", "\n\n\t\tFebruary 25th, ", "2011", "\t\t\t"
-      {
-        :album => album_from_content(band_and_album),
-        :band => band_from_content(band_and_album),
-        :label => label_from_content(album_fields),
-        :release_date => release_date_from_content(album_fields),
-        :release_type => release_type_from_content(album_fields),
-        :url => url
-      }
+    def band_name(album)
+      band_array(album)[3].match(BAND_NAME_AND_COUNTRY_REGEXP)[1]
     end
 
-    def total_albums
-      begin
-        page = search_by_year
-        album_total = page.search('body table:nth-child(2n) tr:first-child b').first.content.match(/\sof\s(\d+)/)
-        if album_total.nil?
-          0
-        else
-          album_total[1].to_i
-        end
-      rescue Exception => e
-        puts "\nError accessing metal-archives.com's paginated result urls: #{e}"
-        return nil
-      end
+    def country(album)
+      band_array(album)[3].match(BAND_NAME_AND_COUNTRY_REGEXP)[2]
+    end
+
+    def album_url(album)
+      album[1].match(ALBUM_URL_AND_NAME_REGEXP)[1]
+    end
+
+    def album_name(album)
+      album[1].match(ALBUM_URL_AND_NAME_REGEXP)[2]
+    end
+
+    def release_type(album)
+      album[2]
+    end
+
+    def release_date(album)
+      release_date_string = album[3].match(RELEASE_DATE_REGEXP)[1] # "2011-04-00"
+      year, month, day = release_date_string.split('-')
+      (day == '00') ? Date.civil(year.to_i, month.to_i, -1) : release_date = Date.parse(release_date_string)
     end
 
     private
 
-    # The band and and album fields are together, so we need to split them apart.
-    def album_from_content(content)
-      content.split(' - ')[1].strip
+    def json_results(url)
+      response = Net::HTTP.get_response(URI.parse(url))
+      data = response.body
+      JSON.parse(data)
     end
 
-    # The band and and album fields are together, so we need to split them apart.
-    def band_from_content(content)
-      content.split(' - ')[0].strip
-    end
-
-    # The label will probably always have ", " in front, so we need to get rid of that but also allow
-    # just the text if it does not have this string.
-    def label_from_content(content)
-      label = content[2].text
-      label.match(/,\s(.+)/) ? $1 : label
-    end
-
-    # The date can be in one of the following forms:
-    # year
-    # month, year
-    # month, day, year
-    def release_date_from_content(content)
-      date = content[4].text
-      if content.size == 7
-        date << content[5].text
-
-        split_date = date.split(' ')
-        if split_date.size == 2 # only have month and year
-          date = DateTime.
-            new(
-              split_date[1].to_i,
-              Date::MONTHNAMES.find_index(split_date[0]),
-              -1
-            ).
-            strftime('%B %e %Y')
-
-            # need to use block to get s, the current captured backreference of the regexp because
-            # gsub doesn't see the $n-style references
-            date.gsub!(/\s(\d{1,2})\s/) do |s|
-              "#{MetalArchives.ordinalize(s.rstrip)}, "
-            end
-        end
-
-      else # only have year
-        date = "December 31st, #{date}"
-      end
-      date.strip
-    end
-
-    # Finds the release type in the assumed spot.
-    def release_type_from_content(content)
-      content[1].text
-    end
-  end
-
-  # Taken from Rails active_support/core_ext/string/inflections.rb but not referenced so the
-  # entire library is needed for this one method.
-  def self.ordinalize(number)
-    if (11..13).include?(number.to_i % 100)
-      "#{number}th"
-    else
-      case number.to_i % 10
-        when 1; "#{number}st"
-        when 2; "#{number}nd"
-        when 3; "#{number}rd"
-        else    "#{number}th"
-      end
+    def band_array(album)
+      album[0].split('"')
     end
   end
 end

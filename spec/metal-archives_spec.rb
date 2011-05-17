@@ -2,159 +2,80 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "MetalArchives" do
-  describe "with an agent" do
-    describe "that searches by year" do
-      before do
-        search_results_html = File.open(File.dirname(__FILE__) + '/html/search_results.html')
-        @search_results = Nokogiri::HTML(search_results_html)
-        @mechanize = stub('Mechanize')
-        Mechanize.stub!(:new).and_return(@mechanize)
-      end
+  before do
+    json = JSON.parse(File.read(File.dirname(__FILE__) + '/json/search_results.json'))
+    @results = JSON.parse(json.to_json)
+    @agent = MetalArchives::Agent.new
+  end
 
-      it "should find the total number of albums" do
-        @mechanize.stub!(:get).and_return(@search_results)
-        agent = MetalArchives::Agent.new(2011)
-
-        agent.total_albums.should == 757
-      end
-
-      it "should get the results page" do
-        @mechanize.stub!(:get).and_return(@search_results)
-        agent = MetalArchives::Agent.new(2011)
-
-        agent.search_by_year.should == @search_results
-      end
-
-      context "with a results page" do
-        it "should find the paginated result urls" do
-          agent = MetalArchives::Agent.new(2011)
-          agent.stub!(:search_by_year).and_return(@search_results)
-
-          urls = (1..16).collect do |i|
-            "/advanced.php?release_year=2011&p=#{i}"
-          end
-          agent.paginated_result_urls.should == urls
-        end
-
-        it "should find the album urls" do
-          @mechanize.stub!(:get).and_return(@search_results)
-          agent = MetalArchives::Agent.new(2011)
-          agent.stub!(:search_by_year).and_return(@search_results)
-
-          urls = [
-            "release.php?id=296061", "release.php?id=295756", "release.php?id=294429", "release.php?id=295451", "release.php?id=295197",
-            "release.php?id=289824", "release.php?id=295519", "release.php?id=295457", "release.php?id=288298", "release.php?id=296048",
-            "release.php?id=290116", "release.php?id=295059", "release.php?id=291931", "release.php?id=296081", "release.php?id=295301",
-            "release.php?id=294242", "release.php?id=294032", "release.php?id=295436", "release.php?id=295797", "release.php?id=294481",
-            "release.php?id=290911", "release.php?id=295988", "release.php?id=295717", "release.php?id=293534", "release.php?id=295111",
-            "release.php?id=290063", "release.php?id=294761", "release.php?id=293839", "release.php?id=295202", "release.php?id=294083",
-            "release.php?id=294702", "release.php?id=265276", "release.php?id=293421", "release.php?id=295295", "release.php?id=293910",
-            "release.php?id=295567", "release.php?id=296037", "release.php?id=296064", "release.php?id=288749", "release.php?id=290749",
-            "release.php?id=295806", "release.php?id=294017", "release.php?id=296098", "release.php?id=294092", "release.php?id=295551",
-            "release.php?id=290740", "release.php?id=295410", "release.php?id=293189", "release.php?id=296140", "release.php?id=291295"
-          ]
-          agent.album_urls(agent.paginated_result_urls.first).should == urls
-        end
-      end
-    end
-
-    describe "with an album page" do
-      context "when a page has no content" do
-        it "should find the band information" do
-          @mechanize = stub('Mechanize')
-          Mechanize.stub!(:new).and_return(@mechanize)
-          @mechanize.stub!(:get).and_return('page not found')
-          agent = MetalArchives::Agent.new(2011)
-          album_url = "release.php?id=000001"
-
-          agent.album_from_url(album_url).should == {}
-        end
-      end
-
-      context "with only a release year" do
-        it "should find the band information" do
-          search_results_html = File.open(File.dirname(__FILE__) + '/html/album_result.html')
-          @search_results = Nokogiri::HTML(search_results_html)
-          @mechanize = stub('Mechanize')
-          Mechanize.stub!(:new).and_return(@mechanize)
-          @mechanize.stub!(:get).and_return(@search_results)
-          agent = MetalArchives::Agent.new(2011)
-          album_url = "release.php?id=000001"
-
-          agent.album_from_url(album_url).should == {
-            :album => 'Fn-2+Fn-1=Fn',
-            :band => 'A Tree',
-            :label => 'NazgÃ»l Distro & Prod.',
-            :release_date => 'December 31st, 2011',
-            :release_type => 'Demo',
-            :url => 'release.php?id=000001'
-          }
-        end
-      end
-
-      context "with only a release month and year" do
-        it "should find the band information" do
-          search_results_html = File.open(File.dirname(__FILE__) + '/html/album_result3.html')
-          @search_results = Nokogiri::HTML(search_results_html)
-          @mechanize = stub('Mechanize')
-          Mechanize.stub!(:new).and_return(@mechanize)
-          @mechanize.stub!(:get).and_return(@search_results)
-          agent = MetalArchives::Agent.new(2011)
-          album_url = "release.php?id=000001"
-
-          agent.album_from_url(album_url).should == {
-            :album => 'Flesh Torn in Twilight',
-            :band => 'Acephalix',
-            :label => 'Deific Mourning',
-            :release_date => 'April 30th, 2011',
-            :release_type => 'Demo',
-            :url => 'release.php?id=000001'
-          }
-        end
-      end
-
-      context "with a release month, day, and year" do
-        it "should find the band information" do
-          search_results_html = File.open(File.dirname(__FILE__) + '/html/album_result2.html')
-          @search_results = Nokogiri::HTML(search_results_html)
-          @mechanize = stub('Mechanize')
-          Mechanize.stub!(:new).and_return(@mechanize)
-          @mechanize.stub!(:get).and_return(@search_results)
-          agent = MetalArchives::Agent.new(2011)
-          album_url = "release.php?id=000001"
-
-          agent.album_from_url(album_url).should == {
-            :album => 'The Mirror of Deliverance',
-            :band => 'A Dream of Poe',
-            :label => 'ARX Productions',
-            :release_date => 'February 25th, 2011',
-            :release_type => 'Full-length',
-            :url => 'release.php?id=000001'
-          }
-        end
-      end
+  describe "#total_albums" do
+    it "shows the total amount of albums" do
+      @agent.stub(:json_results).and_return(@results)
+      @agent.total_albums.should == 2939
     end
   end
 
-  it "ordinalizes a number" do
-    numbers = {
-      1 => '1st',
-      2 => '2nd',
-      3 => '3rd',
-      4 => '4th',
-      5 => '5th',
-      6 => '6th',
-      7 => '7th',
-      8 => '8th',
-      9 => '9th',
-      10 => '10th',
-      32 => '32nd',
-      43 => '43rd',
-      64 => '64th',
-      100 => '100th'
-    }
-    numbers.each do |k, v|
-      MetalArchives.ordinalize(k).should == v
+  describe "#paginated_albums" do
+    it "finds all the albums" do
+      @agent.stub(:json_results).and_return(@results)
+      @agent.paginated_albums.first[0].should == ["<a href=\"http://www.metal-archives.com/bands/...Do_Fundo..._Abismo/3540326997\" title=\"...Do Fundo... Abismo (BR)\">...Do Fundo... Abismo</a>", "<a href=\"http://www.metal-archives.com/albums/...Do_Fundo..._Abismo/Da_Escurid%C3%A3o/304910\">Da Escuridão</a>", "Demo", "April 2011 <!-- 2011-04-00 -->"]
+      @agent.paginated_albums.last[99].should == ["<a href=\"http://www.metal-archives.com/bands/Alcoholism/3540326304\" title=\"Alcoholism (DE)\">Alcoholism</a>", "<a href=\"http://www.metal-archives.com/albums/Alcoholism/Abh%C3%A4ngigkeit/303798\">Abhängigkeit</a>", "Demo", "April 2011 <!-- 2011-04-00 -->"]
+    end
+  end
+
+  describe "#band_url" do
+    it "shows the band's url" do
+      album = ["<a href=", "http://www.metal-archives.com/bands/Alcoholism/3540326304", " title=", "Alcoholism (DE)", ">Alcoholism</a>"]
+      @agent.stub(:band_array).and_return(album)
+      @agent.band_url(album).should == 'http://www.metal-archives.com/bands/Alcoholism/3540326304'
+    end
+  end
+
+  describe "#band_name" do
+    it "shows the band's name" do
+      album = ["<a href=", "http://www.metal-archives.com/bands/Alcoholism/3540326304", " title=", "Alcoholism (DE)", ">Alcoholism</a>"]
+      @agent.stub(:band_array).and_return(album)
+      @agent.band_name(album).should == 'Alcoholism'
+    end
+  end
+
+  describe "#country" do
+    it "shows the band's country" do
+      album = ["<a href=", "http://www.metal-archives.com/bands/Alcoholism/3540326304", " title=", "Alcoholism (DE)", ">Alcoholism</a>"]
+      @agent.stub(:band_array).and_return(album)
+      @agent.country(album).should == 'DE'
+    end
+  end
+
+  describe "#album_url" do
+    it "shows the album's url" do
+      album = ["<a href=\"http://www.metal-archives.com/bands/Alcoholism/3540326304\" title=\"Alcoholism (DE)\">Alcoholism</a>", "<a href=\"http://www.metal-archives.com/albums/Alcoholism/Abh%C3%A4ngigkeit/303798\">Abhängigkeit</a>", "Demo", "April 2011 <!-- 2011-04-00 -->"]
+      @agent.stub(:album).and_return(album)
+      @agent.album_url(album).should == 'http://www.metal-archives.com/albums/Alcoholism/Abh%C3%A4ngigkeit/303798'
+    end
+  end
+
+  describe "#album_name" do
+    it "shows the album's name" do
+      album = ["<a href=\"http://www.metal-archives.com/bands/Alcoholism/3540326304\" title=\"Alcoholism (DE)\">Alcoholism</a>", "<a href=\"http://www.metal-archives.com/albums/Alcoholism/Abh%C3%A4ngigkeit/303798\">Abhängigkeit</a>", "Demo", "April 2011 <!-- 2011-04-00 -->"]
+      @agent.stub(:band_array).and_return(album)
+      @agent.album_name(album).should == 'Abhängigkeit'
+    end
+  end
+
+  describe "#release_type" do
+    it "shows the release type" do
+      album = ["<a href=\"http://www.metal-archives.com/bands/Alcoholism/3540326304\" title=\"Alcoholism (DE)\">Alcoholism</a>", "<a href=\"http://www.metal-archives.com/albums/Alcoholism/Abh%C3%A4ngigkeit/303798\">Abhängigkeit</a>", "Demo", "April 2011 <!-- 2011-04-00 -->"]
+      @agent.stub(:band_array).and_return(album)
+      @agent.release_type(album).should == 'Demo'
+    end
+  end
+
+  describe "#release_date" do
+    it "shows the release date" do
+      album = ["<a href=\"http://www.metal-archives.com/bands/Alcoholism/3540326304\" title=\"Alcoholism (DE)\">Alcoholism</a>", "<a href=\"http://www.metal-archives.com/albums/Alcoholism/Abh%C3%A4ngigkeit/303798\">Abhängigkeit</a>", "Demo", "April 2011 <!-- 2011-04-00 -->"]
+      @agent.stub(:band_array).and_return(album)
+      @agent.release_date(album).should == Date.parse('2011-04-30')
     end
   end
 end
